@@ -24,17 +24,11 @@ ui <- fluidPage(
         
         /* Side panel */
         
-        .col-sm-4 > form {
-          border-width: ;
-        }
-        .form-group.shiny-input-container, #file1_progress {
-          margin-bottom: 0!important;
-        }
-        #btn1 {
-          margin-bottom: 20px;
-        }
         .sidepanel {
-          margin-bottom: 15px;
+          margin-bottom: 30px;
+        }
+        #addr_file_progress {
+          display: none;
         }
         .text-small {
           font-size: .85em;
@@ -48,7 +42,7 @@ ui <- fluidPage(
         .table-a td {
           padding: 2px 4px;
           vertical-align: top;
-          border: 1px solid #e3e3e3
+          border: 1px solid #e3e3e3;
         }
         .modal-header {
           color: red;
@@ -63,15 +57,21 @@ ui <- fluidPage(
   ),
   sidebarLayout(
     sidebarPanel(
-      width = 4,
+      width = 3,
       tags$div(
         class = "sidepanel",
-        h4("Upload an address file"),
-        # tags$p(class = "text-small", "*Anonymized data only"),
+        h4("Download address template (CSV)"),
+        downloadButton(
+          outputId = "addr_temp",
+          label = "Download"
+        ),
+      ),
+      tags$div(
+        class = "sidepanel",
+        h4("Upload your address file"),
         fileInput(
-          inputId = "file1",
+          inputId = "addr_file",
           label = NULL,
-          # label = "CSV",
           accept = c("text/csv", ".csv")
         )
       ),
@@ -87,10 +87,10 @@ ui <- fluidPage(
       ),
       tags$div(
         class = "sidepanel-last",
-        h4("Download results"),
+        h4("Download your results"),
         shinyjs::disabled(
           downloadButton(
-            outputId = "down1",
+            outputId = "addr_results",
             label = "Download"
           )
         )
@@ -101,46 +101,36 @@ ui <- fluidPage(
         tabPanel(
           "Instructions",
           tags$div(
-            tags$h3("How to use"),
-            tags$p("This app submits a table of addresses to the", tags$a(href = "https://tools.usps.com/zip-code-lookup.htm?byaddress", "ZIP Code by Address"), "lookup tool at USPS.com. Upload your addresses, search them rapidly at USPS.com, and download your results from the lefthand panel."),
-            tags$p("Previews of your source file and the search results will appear in the Data Preview tab. To clear your data and start over, refresh the page."),
-            tags$h3("Source file"),
-            tags$table(
-              class = "table-a",
-              tags$tr(
-                tags$td("1"), tags$td("street"), tags$td("unit"), tags$td("city"), tags$td("state"),
-                tags$td("zip")
-              ),
-              tags$tr(tags$td("2"), tags$td(""), tags$td(""), tags$td(""), tags$td(""), tags$td(""))
-            ),
+            tags$h3("About"),
+            tags$p("This app submits a table of addresses to the", tags$a(href = "https://tools.usps.com/zip-code-lookup.htm?byaddress", "ZIP Code by Address"), "lookup tool at USPS.com. Upload your addresses, search them rapidly at USPS.com, and download your results from the side panel."),
+            tags$p("The results file will contain any matches to your submitted addresses that are found in the USPS database. Matched addresses are returned in a standardized format along with a DPV code (learn more about this on the DPV codes tab)."),
+            tags$p("A preview of your address file and the search results will appear in the Preview data tab. To clear your data and start a new search, refresh the page."),
+            tags$h3("Address file"),
             tags$h4("Requirements"),
             tags$ul(
-              tags$li("CSV format."),
-              tags$li("A first row with column names as shown in the example above."),
-              tags$li("Any personally identifying information (i.e., anything that could link an address to a person) removed before uploading.")
+              tags$li("All personally identifying information (i.e., anything that could link an address to a person) must be removed before uploading."),
+              tags$li("It must be formatted as a CSV file."),
+              tags$li("The first row must have the column names as shown in the example below (case sensitive).")
             ),
-            tags$p("To be searched, and address needs values in, at minimum, 1) both street and zip, or 2) all of street, city, and state."),
+            tags$table(
+              class = "table-a",
+              tags$tr(tags$td("1"), tags$td("street"), tags$td("unit"), tags$td("city"), tags$td("state"), tags$td("zip")),
+              tags$tr(tags$td("2"), tags$td("1000 SW Jackson"), tags$td("Ste 120"), tags$td("Topeka"), tags$td("KS"), tags$td("66612"))
+            ),
+            br(),
+            tags$p("To be searched, an address needs to have values in, at minimum, 1) the street and zip columns, or 2) the street, city, and state columns."),
             tags$h4("Row ID"),
-            tags$p("Individual addresses submitted to USPS can return multiple results, all of which are included in the results table. Columns (n_row_src and n_result) are added to help you to match each result to the submitted address. However, it's a good idea to include your own unique row identifier variable to make matching easier."),
-            tags$p("If the source file contains only one column in addition to the required columns, it will be treated as a row identifier and included in the results table. If more than one additional column is present, all additional columns will be ignored and omitted from the results table."),
-            tags$h4("Download template"),
-            tags$p("Click to download a pre-formatted file for your addresses."),
-            downloadButton("down2", label = "Download"),
-            tags$h3("Results"),
-            tags$p("Each result contains the following information:"),
-            tags$ul(
-              tags$li("The source file row number of the address that was submitted (n_row_src). Note: the header row is not counted."),
-              tags$li("The number of the result returned by USPS (n_result)."),
-              tags$li("The address returned by USPS in standardized format (street, city, state, zip4, zip5, and county)."),
-              tags$li("A Delivery Point Validation code (more about this in the DPV Codes tab).")
-            )
+            tags$p("A unique row identifier (row ID) is not required for the uploaded address file, but it may help you when matching the results to the original addresses, especially when multiple addresses are returned for a single address. In case no row ID is present, the results file will contain the columns n_row_src (corresponding to the address order in the uploaded file) and n_result (corresponding to the result(s) returned for each searched address) to help with matching."),
+            tags$p("If the source file contains only one column in addition to the required columns, this column will be treated as a row identifier and will be included in the results table. If more than one additional column is present, all additional columns will be ignored and omitted from the results table."),
+            tags$h4("File template"),
+            tags$p("A preformatted CSV template for your addresses is available to download from the side panel.")
           ),
         ),
         tabPanel(
-          "Data Preview",
+          "Preview data",
           tags$div(
             br(),
-            tags$p(em("Preview your source file and results here."))
+            tags$p(em("Preview your address file and results here."))
           ),
           tags$div(
             class = "preview-section",
@@ -154,7 +144,7 @@ ui <- fluidPage(
           )
         ),
         tabPanel(
-          "DPV Codes",
+          "DPV codes",
           tags$h3("Delivery Point Validation"),
           tags$p("The Delivery Point Validation (DPV) Confirmation Indicator is provided by the USPS to show if an address, or part of an address, is deliverable. In the definitions below, the primary number precedes the street name, and the secondary number follows it (e.g., a unit or lot number)."),
           tags$p("Code definitions:"),
@@ -179,16 +169,7 @@ ui <- fluidPage(
               )
             )
           )
-        )#,
-        # tabPanel(
-        #   "About",
-        #   tags$h3("About"),
-        #   tags$p(
-        #     "This app was created to speed up the process of validating addresses before geocoding.",
-        #     "If you have suggestions for improvement, or if you notice any problems with the app, please",
-        #     "contact the developer."
-        #   )
-        # )
+        )
       )
     )
   )
@@ -199,10 +180,10 @@ ui <- fluidPage(
 # Server ####
 
 server <- function(input, output) {
-  source("func_address_scrapery.R", local = T)
-
+  source("fn.R", local = TRUE)
+  
   # Template table download
-  output$down2 <- downloadHandler(
+  output$addr_temp <- downloadHandler(
     filename = function() {
       "address_template.csv"
     },
@@ -214,8 +195,8 @@ server <- function(input, output) {
 
   # Uploaded table reactive
   df_in <- reactive({
-    req(input$file1)
-    df <- read.csv(input$file1$datapath, colClasses = "character")
+    req(input$addr_file)
+    df <- read.csv(input$addr_file$datapath, colClasses = "character")
     df
   })
 
@@ -241,8 +222,8 @@ server <- function(input, output) {
   # Searched table reactive
   df_out <- eventReactive(input$btn1, {
     req(is.data.frame(df_in()))
-    df1 <- read.csv(input$file1$datapath, colClasses = "character")
-    df2 <- tryCatch(usps_df_all(df1),
+    df1 <- read.csv(input$addr_file$datapath, colClasses = "character")
+    df2 <- tryCatch(usps_lookup_shiny(df1),
       error = function(c) {
         conditionMessage(c)
       }
@@ -261,7 +242,7 @@ server <- function(input, output) {
   # Enable "Download" button
   observeEvent(df_out(), {
     if (is.data.frame(df_out())) {
-      shinyjs::enable("down1")
+      shinyjs::enable("addr_results")
     }
   })
 
@@ -286,7 +267,7 @@ server <- function(input, output) {
   })
 
   # Searched table download
-  output$down1 <- downloadHandler(
+  output$addr_results <- downloadHandler(
     filename = function() {
       paste0("usps_", Sys.Date(), ".csv")
     },

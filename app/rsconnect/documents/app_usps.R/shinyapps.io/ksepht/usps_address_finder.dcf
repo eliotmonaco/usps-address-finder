@@ -1,0 +1,13 @@
+name: usps_address_finder
+title: usps_address_finder
+username:
+account: ksepht
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 9445810
+bundleId: 7448396
+url: https://ksepht.shinyapps.io/usps_address_finder/
+when: 1689168646.04275
+lastSyncTime: 1689168646.04276
+asMultiple: FALSE
+asStatic: FALSE
